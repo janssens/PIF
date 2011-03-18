@@ -702,12 +702,14 @@ namespace pif {
 				}
 			}
 			
+			//~ /!\ il ya deux fois moins de edge que de half edge. ne pas parcourir tout deux fois!
 			void forEachEdge( void (*fct) (void *,void *), void * data){
 				typename std::list<Face<T> >::iterator it;
 				for (it=_faces.begin(); it!=_faces.end(); ++it){
 					it->forEachEdge(fct,data);
 				}
 			}
+			
 			
 			void forEachHalfEdge( void (*fct) (void *,void *), void * data){
 				typename std::list<Face<T> >::iterator it;

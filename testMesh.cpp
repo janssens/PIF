@@ -138,31 +138,31 @@ int main(int argc, char **argv) {
         
         std::cout << "myMeshA:" << myMeshA << std::endl;
         myMeshA.showStat();
-		
+		//~ 
+		//~ std::list<Face<montype> > faces = myMeshA.getFaces();
 		//~ typename std::list<Face<montype> >::iterator it;
-		//~ for (it=myMeshA.getFaces().begin(); it!=myMeshA.getFaces().end(); ++it){
+		//~ for (it=faces.begin(); it!=faces.end(); ++it){
 			//~ std::cout << *it << std::endl;
 			//~ HalfEdge<montype> first = it->getHalfEdge();
 			//~ HalfEdge<montype> current = first;
 			//~ int i = 0;
 			//~ do{
-				//~ std::cout << current << ", ";
-				//~ current = first.getNext();
+				//~ std::cout << i << ": " << current << std::endl;
+				//~ current = current.getNext();
 				//~ i++;
-			//~ }while( current != first && i < 50); 
-			//~ std::cout <<  std::endl;
+			//~ }while( current != first); 
 		//~ }
-		
+		//~ 
 		//~ std::cout << "myMeshB:" << std::endl;
         //~ myMeshB.showStat();
         //~ 
         //~ Vertex<montype> v(0,0,0);
         //~ HalfEdge<montype> he(v);
         //~ myMeshA.forEachFace(printFaceVsEdge<montype>,(void *) &he);
-        //~ myMeshA.forEachHalfEdge(printHalfEdge<montype>, (void *)NULL);
+        myMeshA.forEachHalfEdge(printHalfEdge<montype>, (void *)NULL);
        // myMeshA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
         
-        //~ myMeshA.forEachEdge(printEdge<montype>, (void *)NULL);
+        myMeshA.forEachEdge(printEdge<montype>, (void *)NULL);
     }
     else
          std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
