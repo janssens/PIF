@@ -126,32 +126,32 @@ int main(int argc, char **argv) {
          std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
 	
 	std::ifstream myOffA("cube.off", std::ios::in);
-	std::ifstream myOffB("cube2.off", std::ios::in);
-	if(myOffA&&myOffB)
+	//~ std::ifstream myOffB("cube2.off", std::ios::in);
+	if(myOffA)//&&myOffB)
     {   
 		Mesh<montype> myMeshA;
-		Mesh<montype> myMeshB;
+		//~ Mesh<montype> myMeshB;
 		myOffA >> myMeshA;
-		myOffB >> myMeshB;
+		//~ myOffB >> myMeshB;
         myOffA.close();
-        myOffB.close();
+        //~ myOffB.close();
         
-        std::cout << "myMeshA:" << std::endl;
+        std::cout << "myMeshA:" << myMeshA << std::endl;
         myMeshA.showStat();
 		
-		typename std::list<Face<montype> >::iterator it;
-		for (it=myMeshA.getFaces().begin(); it!=myMeshA.getFaces().end(); ++it){
-			std::cout << *it << std::endl;
-			HalfEdge<montype> first = it->getHalfEdge();
-			HalfEdge<montype> current = first;
-			int i = 0;
-			do{
-				std::cout << current << ", ";
-				current = first.getNext();
-				i++;
-			}while( current != first && i < 50); 
-			std::cout <<  std::endl;
-		}
+		//~ typename std::list<Face<montype> >::iterator it;
+		//~ for (it=myMeshA.getFaces().begin(); it!=myMeshA.getFaces().end(); ++it){
+			//~ std::cout << *it << std::endl;
+			//~ HalfEdge<montype> first = it->getHalfEdge();
+			//~ HalfEdge<montype> current = first;
+			//~ int i = 0;
+			//~ do{
+				//~ std::cout << current << ", ";
+				//~ current = first.getNext();
+				//~ i++;
+			//~ }while( current != first && i < 50); 
+			//~ std::cout <<  std::endl;
+		//~ }
 		
 		//~ std::cout << "myMeshB:" << std::endl;
         //~ myMeshB.showStat();

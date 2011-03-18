@@ -822,6 +822,7 @@ namespace pif {
 			std::getline(fichier, contenu); //get the end of the line
 			Vertex<T> v(x,y,z);
 			vertex.push_back(v);
+			std::cout << i << ":" << v << std::endl;
 		}
 		//~ typename std::vector<Vertex<T> >::iterator it;
 		//~ for ( it=vertex.begin() ; it < vertex.end(); it++ )
@@ -853,20 +854,18 @@ namespace pif {
 			do{ //for all Vertex in the face
 				previousVertexIndex = VertexIndex;
 				fichier >> VertexIndex;
-				//~ std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
+				std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
 				HalfEdge<T> currentHalfEdge(vertex.at(VertexIndex));
 				nbOfHalfEdges = link[VertexIndex].size();
 				pairFound = false;
 				if (nbOfHalfEdges){ // there is at least one halfedge going somewhere from here
-					//~ std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
+					std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
 					for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 						tmp_he = link[VertexIndex][k];
 						if (tmp_he.getVertex()==vertex.at(previousVertexIndex)) { // the pair exist!
 							currentHalfEdge.setPair(tmp_he);
 							tmp_he.setPair(currentHalfEdge);
-							//~ std::cout << currentHalfEdge << " paired with " << tmp_he << std::endl;
-							//~ Edge<T> ttt(currentHalfEdge);
-							//~ std::cout << ttt << std::endl;	
+							std::cout << "->" << VertexIndex << "(" << currentHalfEdge << ") paired with " << "->" << previousVertexIndex << "(" << tmp_he << ")" << std::endl;
 							link[VertexIndex].erase(link[VertexIndex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 						}
@@ -874,24 +873,24 @@ namespace pif {
 				}
 				if (!pairFound) { // the pair do not exist yet!
 					link[previousVertexIndex].push_back(currentHalfEdge); // this new halfedge is going from previousVertex to Vertex, we keep track of that
-					//~ std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
+					std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
 				}
 				previousHalfEdge.setNext(currentHalfEdge);
 				previousHalfEdge = currentHalfEdge;
 				j++;//we just read one more Vertex
 			} while (j < nbOfVertexInThisFace);
-			//~ std::cout << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
+			std::cout << "->" << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
 			previousHalfEdge.setNext(firstsHalfEdge);// and the cycle is complete
 			nbOfHalfEdges = link[indexOfFirstVertex].size();// all the half edge who start here
 			pairFound = false;
 			if (nbOfHalfEdges){ // there is at least one halfedge who start here
-				//~ std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
+				std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
 				for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 					tmp_he = link[indexOfFirstVertex][k];
 					if (tmp_he.getVertex()==vertex.at(VertexIndex)) { // the pair exist!
-							//~ std::cout << VertexIndex << "->" << indexOfFirstVertex << " paired" << std::endl;
-							previousHalfEdge.setPair(tmp_he);
-							tmp_he.setPair(previousHalfEdge);
+							std::cout << indexOfFirstVertex << "(" << firstsHalfEdge << ") paired with " << "->" << VertexIndex << "(" << tmp_he << ")" << std::endl;
+							firstsHalfEdge.setPair(tmp_he);
+							tmp_he.setPair(firstsHalfEdge);
 							link[indexOfFirstVertex].erase(link[indexOfFirstVertex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 					}
@@ -899,11 +898,11 @@ namespace pif {
 			}
 			if (!pairFound) { // the pair do not exist yet!
 				link[VertexIndex].push_back(firstsHalfEdge);// we know from were the first half edge was going, and we keep track of that
-				//~ std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
+				std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
 			}
 			Face<T> face(firstsHalfEdge);
 			myMesh.push(face);
-			//~ std::cout << "face:" << face << std::endl;
+			std::cout << "face:" << face << std::endl;
 			std::getline(fichier, contenu); //get the end of the line
 		}
 		int leftOver=0;
