@@ -304,15 +304,12 @@ namespace pif {
 		public:
 			Edge(void) {};
 			Edge(HalfEdge<T> he) : _data(new Obj(he)) {};
-			Edge(const Vertex<T> a,const Vertex<T> b) : _data(new Obj(b)){
-					HalfEdge<T> he(a);
-					he.setPair(_data->halfedge);
-					_data->halfedge.setPair(he);
-			};
+			Edge(const Vertex<T> a,const Vertex<T> b) : _data(new Obj(a,b)) {};
 			////
 			Vertex<T> getA(void) const { return _data->halfedge.getPair().getVertex(); }
 			Vertex<T> getB(void) const { return _data->halfedge.getVertex(); }
 			HalfEdge<T> getHalfEdge(void) const { return _data->halfedge; }
+			HalfEdge<T> getPair(void) const { return _data->halfedge.getPair(); }
 			bool isNull(void) const { return !(bool)_data;};
 			////
 			Edge<T> duplicate(void) {
@@ -326,10 +323,53 @@ namespace pif {
 				Edge<T> opos(_data->halfedge.getPair());
 				return opos;
 			}
+			bool operator ==(const Edge<T> v)const {
+				return ((v.getHalfEdge()==this->getHalfEdge()&&v.getPair()==this->getPair())||(v.getHalfEdge()==this->getPair()&&v.getPair()==this->getHalfEdge()));
+			}
+			bool operator !=(const Edge<T> v)const {
+				return ((v.getHalfEdge()!=this->getHalfEdge()||v.getPair()!=this->getPair())&&(v.getHalfEdge()!=this->getPair()||v.getPair()!=this->getHalfEdge()));
+			}
+			//~ bool operator !=(const Edge<T> v)const {
+				//~ return (v.getA()!=this->getA()||v.getB()!=this->getB())&&(v.getA()!=this->getB()||v.getB()!=this->getA());
+			//~ }
+			//~ bool operator >(const Edge<T> v) const{
+				//~ return (_data->x>v.getX())||((_data->x==v.getX())&&(_data->y>v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z>v.getZ()));
+			//~ }
+			//~ bool operator >=(const Edge<T> v) const{
+				//~ return (_data->x>v.getX())||((_data->x==v.getX())&&(_data->y>v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z>=v.getZ()));
+			//~ }
+			//~ bool operator <(const Edge<T> v) const{
+				//~ if (v.getA()<this->getA()) {
+					//~ 
+				//~ }else if((v.getA()<=this->getA())){
+					//~ 
+				//~ }else{
+					//~ 
+				//~ }
+				//~ return (v.getA()<this->getA())&&v.getB()==this->getB())||(v.getA()==this->getB()&&v.getB()==this->getA());
+			//~ }
+			//~ bool operator <=(const Edge<T> v) const{
+				//~ return (_data->x<v.getX())||((_data->x==v.getX())&&(_data->y<v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z<=v.getZ()));
+			//~ }
 		private:
 			struct Obj{
 				HalfEdge<T> halfedge;
-				Obj(const HalfEdge<T> he) { halfedge = he;};
+				Obj(const HalfEdge<T> he) { 
+					if (he.getVertex()>he.getPair().getVertex())
+						halfedge = he;
+					else
+						halfedge = he.getPair();
+				};
+				Obj(const Vertex<T> a, const Vertex<T> b) {
+					HalfEdge<T> hea(a);
+					HalfEdge<T> heb(b);
+					if (a>b)
+						halfedge = hea;
+					else
+						halfedge = heb;
+					heb.setPair(hea);
+					hea.setPair(heb);
+				};
 			};
 			boost::shared_ptr<struct Obj> _data;
 	};
@@ -579,9 +619,12 @@ namespace pif {
 			
 			void forEachEdge( void (*fct) (void *,void *), void * data){
 				if ((bool)_data) {
+					std::vector<Edge<T> > allreadySeen;
 					HalfEdge<T> halfEdge = _data->edge;
 					do {
 						Edge<T> e(halfEdge);
+						for (int it=0; it<allreadySeen.size() && allreadySeen[it]<e; it++)
+						
 						fct((void *) &e, data);
 						halfEdge = halfEdge.getNext();
 					} while (halfEdge != _data->edge);

@@ -63,9 +63,13 @@ int main(int argc, char **argv) {
 	std::cout << "b.y = 0" << std::endl;
 	std::cout << "e: " << e << std::endl;
 	std::cout << "f: " << f << std::endl;
-	Edge<montype> g(hea);
-	std::cout << "g(hea): " << g << std::endl;
-	
+	Edge<montype> g1(hea);
+	std::cout << "g1(hea): " << g1 << std::endl;
+	Edge<montype> g2(heb);
+	std::cout << "g2(heb): " << g2 << std::endl;
+	std::cout << "g1 == g2: " << ((g1==g2) ? "true" : "false")  << std::endl;
+	std::cout << "g1 == e: " << ((g1==e) ? "true" : "false")  << std::endl;
+	std::cout << "g1 != e: " << ((g1!=e) ? "true" : "false")  << std::endl;
 	return 0;
 }
 
