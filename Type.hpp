@@ -21,6 +21,9 @@
 #include <math.h>
 #include <boost/smart_ptr/shared_ptr.hpp>
  
+#define MAXIMUM_NUMBER_OF_HALFEDGES 150
+ 
+ 
  // T must include (+ - * /)
  
 namespace pif {
@@ -256,6 +259,7 @@ namespace pif {
 					exit(1);
 				}
 				_data->pair = he;
+				he._data->pair = *this;
 			};
 			void setNext(HalfEdge<T> he) {  
 				if (!_data){
@@ -324,33 +328,43 @@ namespace pif {
 				return opos;
 			}
 			bool operator ==(const Edge<T> v)const {
-				return ((v.getHalfEdge()==this->getHalfEdge()&&v.getPair()==this->getPair())||(v.getHalfEdge()==this->getPair()&&v.getPair()==this->getHalfEdge()));
+				return (v.getA()==this->getA()&&v.getB()==this->getB());
 			}
 			bool operator !=(const Edge<T> v)const {
-				return ((v.getHalfEdge()!=this->getHalfEdge()||v.getPair()!=this->getPair())&&(v.getHalfEdge()!=this->getPair()||v.getPair()!=this->getHalfEdge()));
+				return (v.getA()!=this->getA()||v.getB()!=this->getB());
 			}
-			//~ bool operator !=(const Edge<T> v)const {
-				//~ return (v.getA()!=this->getA()||v.getB()!=this->getB())&&(v.getA()!=this->getB()||v.getB()!=this->getA());
-			//~ }
-			//~ bool operator >(const Edge<T> v) const{
-				//~ return (_data->x>v.getX())||((_data->x==v.getX())&&(_data->y>v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z>v.getZ()));
-			//~ }
-			//~ bool operator >=(const Edge<T> v) const{
-				//~ return (_data->x>v.getX())||((_data->x==v.getX())&&(_data->y>v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z>=v.getZ()));
-			//~ }
-			//~ bool operator <(const Edge<T> v) const{
-				//~ if (v.getA()<this->getA()) {
-					//~ 
-				//~ }else if((v.getA()<=this->getA())){
-					//~ 
-				//~ }else{
-					//~ 
-				//~ }
-				//~ return (v.getA()<this->getA())&&v.getB()==this->getB())||(v.getA()==this->getB()&&v.getB()==this->getA());
-			//~ }
-			//~ bool operator <=(const Edge<T> v) const{
-				//~ return (_data->x<v.getX())||((_data->x==v.getX())&&(_data->y<v.getY()))||((_data->x==v.getX())&&(_data->y==v.getY())&&(_data->z<=v.getZ()));
-			//~ }
+			bool operator >(const Edge<T> v) const{
+				if (this->getA()>v.getA())
+					return true;
+				else if(this->getA()==v.getA())
+					return (this->getB()>v.getB());
+				else
+					return false;
+			}
+			bool operator >=(const Edge<T> v) const{
+				if (this->getA()>v.getA())
+					return true;
+				else if(this->getA()==v.getA())
+					return (this->getB()>=v.getB());
+				else
+					return false;
+			}
+			bool operator <(const Edge<T> v) const{
+				if (this->getA()<v.getA())
+					return true;
+				else if(this->getA()==v.getA())
+					return (this->getB()<v.getB());
+				else
+					return false;
+			}
+			bool operator <=(const Edge<T> v) const{
+				if (this->getA()<v.getA())
+					return true;
+				else if(this->getA()==v.getA())
+					return (this->getB()<=v.getB());
+				else
+					return false;
+			}
 		private:
 			struct Obj{
 				HalfEdge<T> halfedge;
@@ -368,7 +382,7 @@ namespace pif {
 					else
 						halfedge = heb;
 					heb.setPair(hea);
-					hea.setPair(heb);
+					//~ hea.setPair(heb);
 				};
 			};
 			boost::shared_ptr<struct Obj> _data;
@@ -545,17 +559,17 @@ namespace pif {
 					halfEdge = halfEdge.getNext();
 				} while (halfEdge != firstHalfEdge);
 			};
-			Face(std::list<Edge<T> >* listOfEdges) : _data(new Obj(listOfEdges->begin()->getHalfEdge())){
-				typename std::list<Edge<T> >::iterator it;
-				for ( it = listOfEdges->begin(); it != listOfEdges->end();){
-					Edge<T> a = *it;
-					a.getHalfEdge().setFace(*this); //this face is now related to the halfedge
-					it++;
-					if (it != listOfEdges->end())
-						a.getHalfEdge().setNext(it->getHalfEdge());
-				}
-				listOfEdges->back().getHalfEdge().setNext(listOfEdges->front().getHalfEdge());
-			};
+			//~ Face(std::list<Edge<T> >* listOfEdges) : _data(new Obj(listOfEdges->begin()->getHalfEdge())){
+				//~ typename std::list<Edge<T> >::iterator it;
+				//~ for ( it = listOfEdges->begin(); it != listOfEdges->end();){
+					//~ Edge<T> a = *it;
+					//~ a.getHalfEdge().setFace(*this); //this face is now related to the halfedge
+					//~ it++;
+					//~ if (it != listOfEdges->end())
+						//~ a.getHalfEdge().setNext(it->getHalfEdge());
+				//~ }
+				//~ listOfEdges->back().getHalfEdge().setNext(listOfEdges->front().getHalfEdge());
+			//~ };
 			bool isNull(void) const { return !(bool)_data;};
 			////
 			Vect<T> getNormal(void) const{ 
@@ -617,19 +631,7 @@ namespace pif {
 				}
 			}
 			
-			void forEachEdge( void (*fct) (void *,void *), void * data){
-				if ((bool)_data) {
-					std::vector<Edge<T> > allreadySeen;
-					HalfEdge<T> halfEdge = _data->edge;
-					do {
-						Edge<T> e(halfEdge);
-						for (int it=0; it<allreadySeen.size() && allreadySeen[it]<e; it++)
-						
-						fct((void *) &e, data);
-						halfEdge = halfEdge.getNext();
-					} while (halfEdge != _data->edge);
-				}
-			}
+			
 			void forEachHalfEdge( void (*fct) (void *,void *), void * data){
 				if ((bool)_data) {
 					HalfEdge<T> halfEdge = _data->edge;
@@ -657,10 +659,16 @@ namespace pif {
 		}else{
 			HalfEdge<T> firstHalfEdge = face.getHalfEdge();
 			HalfEdge<T> halfEdge = firstHalfEdge;
+			int i=0;
 			do {
 				o << halfEdge.getVertex() << " ";
 				halfEdge = halfEdge.getNext();
-			} while (halfEdge != firstHalfEdge);
+				i++;
+			} while ((halfEdge != firstHalfEdge) && (i < MAXIMUM_NUMBER_OF_HALFEDGES ));
+			if (i==MAXIMUM_NUMBER_OF_HALFEDGES){
+				o << "/!\\ PIF Error: More than " << MAXIMUM_NUMBER_OF_HALFEDGES << " edges!";
+				exit(1);
+			}
 			return o;
 		}
 	};
@@ -708,6 +716,7 @@ namespace pif {
 				int halfedge_count = 0;
 				std::vector<Vertex<T> > vertex_array;
 				for (it=_faces.begin(); it!=_faces.end(); ++it){
+					//~ std::cout << "face:" << *it << std::endl << std::endl;
 					HalfEdge<T> firstHalfEdge = it->getHalfEdge();
 					HalfEdge<T> halfEdge = firstHalfEdge;
 					do {
@@ -728,7 +737,8 @@ namespace pif {
 						halfEdge = halfEdge.getNext();
 						halfedge_count++;
 					} while (halfEdge != firstHalfEdge);
-					_face_count++;;
+					//~ _face_count++;
+					//~ std::cout << _face_count;
 				}
 				_vertex_count = vertex_array.size();
 				_edge_count = halfedge_count/2;
@@ -745,11 +755,26 @@ namespace pif {
 				}
 			}
 			
-			//~ /!\ il ya deux fois moins de edge que de half edge. ne pas parcourir tout deux fois!
 			void forEachEdge( void (*fct) (void *,void *), void * data){
-				typename std::list<Face<T> >::iterator it;
-				for (it=_faces.begin(); it!=_faces.end(); ++it){
-					it->forEachEdge(fct,data);
+				typename std::list<Face<T> >::iterator itFace;
+				std::vector<Edge<T> > alreadySeen;
+				for (itFace=_faces.begin(); itFace!=_faces.end(); ++itFace){ // for all face
+					//~ std::cout << "dealing with face:" << *itFace << std::endl;
+					HalfEdge<T> firstHalfEdge = itFace->getHalfEdge();
+					HalfEdge<T> currentHalfEdge = firstHalfEdge;
+					do { // for all halfedges on the face
+						Edge<T> e(currentHalfEdge);
+						int max = alreadySeen.size();
+						int tmp = 0;
+						for (; (tmp<max) && (alreadySeen.at(tmp)<e); tmp ++){ } //check if the Edge is already seen
+						if (tmp==max||alreadySeen.at(tmp)!=e) //Edge is not already seen
+						{
+							//~ std::cout << "just seen:" << e << std::endl;
+							fct((void *) &e, data);
+							alreadySeen.insert(alreadySeen.begin()+tmp,e); //this Edge is now seen
+						}
+						currentHalfEdge = currentHalfEdge.getNext();
+					} while (currentHalfEdge != firstHalfEdge);
 				}
 			}
 			
@@ -867,7 +892,7 @@ namespace pif {
 			std::getline(fichier, contenu); //get the end of the line
 			Vertex<T> v(x,y,z);
 			vertex.push_back(v);
-			std::cout << i << ":" << v << std::endl;
+			//~ std::cout << i << ":" << v << std::endl;
 		}
 		//~ typename std::vector<Vertex<T> >::iterator it;
 		//~ for ( it=vertex.begin() ; it < vertex.end(); it++ )
@@ -899,18 +924,18 @@ namespace pif {
 			do{ //for all Vertex in the face
 				previousVertexIndex = VertexIndex;
 				fichier >> VertexIndex;
-				std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
+				//~ std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
 				HalfEdge<T> currentHalfEdge(vertex.at(VertexIndex));
 				nbOfHalfEdges = link[VertexIndex].size();
 				pairFound = false;
 				if (nbOfHalfEdges){ // there is at least one halfedge going somewhere from here
-					std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
+					//~ std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
 					for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 						tmp_he = link[VertexIndex][k];
 						if (tmp_he.getVertex()==vertex.at(previousVertexIndex)) { // the pair exist!
 							currentHalfEdge.setPair(tmp_he);
-							tmp_he.setPair(currentHalfEdge);
-							std::cout << "->" << VertexIndex << "(" << currentHalfEdge << ") paired with " << "->" << previousVertexIndex << "(" << tmp_he << ")" << std::endl;
+							//~ tmp_he.setPair(currentHalfEdge);
+							//~ std::cout << "->" << VertexIndex << "(" << currentHalfEdge << ") paired with " << "->" << previousVertexIndex << "(" << tmp_he << ")" << std::endl;
 							link[VertexIndex].erase(link[VertexIndex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 						}
@@ -918,24 +943,24 @@ namespace pif {
 				}
 				if (!pairFound) { // the pair do not exist yet!
 					link[previousVertexIndex].push_back(currentHalfEdge); // this new halfedge is going from previousVertex to Vertex, we keep track of that
-					std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
+					//~ std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
 				}
 				previousHalfEdge.setNext(currentHalfEdge);
 				previousHalfEdge = currentHalfEdge;
 				j++;//we just read one more Vertex
 			} while (j < nbOfVertexInThisFace);
-			std::cout << "->" << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
+			//~ std::cout << "->" << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
 			previousHalfEdge.setNext(firstsHalfEdge);// and the cycle is complete
 			nbOfHalfEdges = link[indexOfFirstVertex].size();// all the half edge who start here
 			pairFound = false;
 			if (nbOfHalfEdges){ // there is at least one halfedge who start here
-				std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
+				//~ std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
 				for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 					tmp_he = link[indexOfFirstVertex][k];
 					if (tmp_he.getVertex()==vertex.at(VertexIndex)) { // the pair exist!
-							std::cout << indexOfFirstVertex << "(" << firstsHalfEdge << ") paired with " << "->" << VertexIndex << "(" << tmp_he << ")" << std::endl;
+							//~ std::cout << indexOfFirstVertex << "(" << firstsHalfEdge << ") paired with " << "->" << VertexIndex << "(" << tmp_he << ")" << std::endl;
 							firstsHalfEdge.setPair(tmp_he);
-							tmp_he.setPair(firstsHalfEdge);
+							//~ tmp_he.setPair(firstsHalfEdge);
 							link[indexOfFirstVertex].erase(link[indexOfFirstVertex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 					}
@@ -943,11 +968,11 @@ namespace pif {
 			}
 			if (!pairFound) { // the pair do not exist yet!
 				link[VertexIndex].push_back(firstsHalfEdge);// we know from were the first half edge was going, and we keep track of that
-				std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
+				//~ std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
 			}
 			Face<T> face(firstsHalfEdge);
 			myMesh.push(face);
-			std::cout << "face:" << face << std::endl;
+			//~ std::cout << "face:" << face << std::endl;
 			std::getline(fichier, contenu); //get the end of the line
 		}
 		int leftOver=0;

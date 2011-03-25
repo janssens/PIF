@@ -55,51 +55,62 @@ int main(int argc, char **argv) {
 	Vertex<montype>  d((montype)0,(montype)0,(montype)0);
 	std::cout << "d: " << d << std::endl;
 	
-	//// Edge ////
-	std::cout << "/////////\nEdge" << std::endl;
-	Edge<montype> e1(a,b);
-	std::cout << "e1(a,b): " << e1 << std::endl;
-	Edge<montype> e2(b,c);
-	std::cout << "e2(b,c): " << e2 << std::endl;
-	Edge<montype> e3(c,a);
-	std::cout << "e3(c,a): " << e3 << std::endl;
-	Edge<montype> e4(a,d);
-	std::cout << "e4(a,d): " << e4 << std::endl;
-	Edge<montype> e5(b,d);
-	std::cout << "e5(b,d): " << e5 << std::endl;
-	Edge<montype> e6(c,d);
-	std::cout << "e6(c,d): " << e6 << std::endl;
+	//// HalfEdge ////
+	std::cout << "/////////\nHalfEdge" << std::endl;
+	HalfEdge<montype> he11(a);
+	std::cout << "he11(a): " << he11 << std::endl;
+	HalfEdge<montype> he12(b);
+	std::cout << "he12(b): " << he12 << std::endl;
+	HalfEdge<montype> he13(d);
+	std::cout << "he12(d): " << he13 << std::endl;
+	he11.setNext(he12);
+	he12.setNext(he13);
+	he13.setNext(he11);
+	HalfEdge<montype> he21(a);
+	std::cout << "he21(a): " << he21 << std::endl;
+	HalfEdge<montype> he22(c);
+	std::cout << "he22(c): " << he22 << std::endl;
+	HalfEdge<montype> he23(b);
+	std::cout << "he22(b): " << he23 << std::endl;
+	he21.setNext(he22);
+	he22.setNext(he23);
+	he23.setNext(he21);
+	he21.setPair(he12);
+	HalfEdge<montype> he31(b);
+	std::cout << "he31(b): " << he31 << std::endl;
+	HalfEdge<montype> he32(c);
+	std::cout << "he32(c): " << he32 << std::endl;
+	HalfEdge<montype> he33(d);
+	std::cout << "he33(d): " << he33 << std::endl;
+	he31.setNext(he32);
+	he32.setNext(he33);
+	he33.setNext(he31);
+	he31.setPair(he13);
+	he32.setPair(he23);
+	HalfEdge<montype> he41(a);
+	std::cout << "he41(a): " << he41 << std::endl;
+	HalfEdge<montype> he42(d);
+	std::cout << "he42(d): " << he42 << std::endl;
+	HalfEdge<montype> he43(c);
+	std::cout << "he43(c): " << he43 << std::endl;
+	he41.setNext(he42);
+	he42.setNext(he43);
+	he43.setNext(he41);
+	he41.setPair(he22);
+	he42.setPair(he11);
+	he43.setPair(he33);
 	
 	//// Mesh ////
 	std::cout << "\n\n/////////\nMesh" << std::endl;
 	
-	std::list<Edge<montype> > listOfEdges;
-	listOfEdges.push_back(e1);
-	listOfEdges.push_back(e2);
-	listOfEdges.push_back(e3);
-	Face<montype> face1(&listOfEdges);
-	std::cout << "face1(e1,e2,e3): " << face1 << std::endl;
-	
-	listOfEdges.clear();
-	listOfEdges.push_back(-e1);
-	listOfEdges.push_back(e4);
-	listOfEdges.push_back(-e5);
-	Face<montype> face2(&listOfEdges);
-	std::cout << "face2(-e1,e4,-e5): " << face2 << std::endl;
-	//~
-	listOfEdges.clear();
-	listOfEdges.push_back(-e2);
-	listOfEdges.push_back(e5);
-	listOfEdges.push_back(-e6);
-	Face<montype> face3(&listOfEdges);
-	std::cout << "face3(-e2,e5,-e6): " << face3 << std::endl;
-	//~ 
-	listOfEdges.clear();
-	listOfEdges.push_back(-e3);
-	listOfEdges.push_back(e6);
-	listOfEdges.push_back(-e4);
-	Face<montype> face4(&listOfEdges);
-	std::cout << "face4(-e1,e4,-e5): " << face4 << std::endl;
+	Face<montype> face1(he11);
+	std::cout << "face1: " << face1 << std::endl;
+	Face<montype> face2(he21);
+	std::cout << "face2: " << face2 << std::endl;
+	Face<montype> face3(he31);
+	std::cout << "face3: " << face3 << std::endl;
+	Face<montype> face4(he41);
+	std::cout << "face4: " << face4 << std::endl;
 	//~ 
 	Mesh<montype> myMesh;
 	myMesh.push(face1);
@@ -110,62 +121,41 @@ int main(int argc, char **argv) {
 	myMesh.stat();
 	std::cout << "myMesh.stat()" << std::endl;
 	std::cout << "myMesh:\n" << myMesh << std::endl;
+	myMesh.forEachEdge(printEdge<montype>, (void *)NULL);
 	
-	int whatever = 56;
-	myMesh.forEachFace( printFace<montype>, (void *) &whatever );
+	//~ int whatever = 56;
+	//~ myMesh.forEachFace( printFace<montype>, (void *) &whatever );
          
-	std::ifstream myOff("cube.off", std::ios::in);
-	if(myOff)
+	std::ifstream myOff1("cube.off", std::ios::in);
+	std::ifstream myOff2("cube2.off", std::ios::in);
+	if(myOff1&&myOff2)
     {   
-		Mesh<montype> myMeshFromFile;
-		myOff >> myMeshFromFile;
-        myOff.close();
-		std::cout << "myMeshFromFile:\n" << myMeshFromFile << std::endl;
+		Mesh<montype> myMeshFromFileA;
+		Mesh<montype> myMeshFromFileB;
+		myOff1 >> myMeshFromFileA;
+		myOff2 >> myMeshFromFileB;
+        myOff1.close();
+        myOff2.close();
+		std::cout << "myMeshFromFileA (cube.off):\n" << myMeshFromFileA << std::endl;
+		std::cout << "myMeshFromFileB (cube2.off):\n" << myMeshFromFileB << std::endl;
+		
+		//~ myMeshFromFileA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
+		myMeshFromFileA.forEachEdge(printEdge<montype>, (void *)NULL);
     }
     else
          std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
 	
-	std::ifstream myOffA("cube.off", std::ios::in);
-	//~ std::ifstream myOffB("cube2.off", std::ios::in);
-	if(myOffA)//&&myOffB)
-    {   
-		Mesh<montype> myMeshA;
-		//~ Mesh<montype> myMeshB;
-		myOffA >> myMeshA;
-		//~ myOffB >> myMeshB;
-        myOffA.close();
-        //~ myOffB.close();
-        
-        std::cout << "myMeshA:" << myMeshA << std::endl;
-        myMeshA.showStat();
-		//~ 
-		//~ std::list<Face<montype> > faces = myMeshA.getFaces();
-		//~ typename std::list<Face<montype> >::iterator it;
-		//~ for (it=faces.begin(); it!=faces.end(); ++it){
-			//~ std::cout << *it << std::endl;
-			//~ HalfEdge<montype> first = it->getHalfEdge();
-			//~ HalfEdge<montype> current = first;
-			//~ int i = 0;
-			//~ do{
-				//~ std::cout << i << ": " << current << std::endl;
-				//~ current = current.getNext();
-				//~ i++;
-			//~ }while( current != first); 
-		//~ }
-		//~ 
-		//~ std::cout << "myMeshB:" << std::endl;
-        //~ myMeshB.showStat();
-        //~ 
+
         //~ Vertex<montype> v(0,0,0);
         //~ HalfEdge<montype> he(v);
         //~ myMeshA.forEachFace(printFaceVsEdge<montype>,(void *) &he);
-        myMeshA.forEachHalfEdge(printHalfEdge<montype>, (void *)NULL);
-       // myMeshA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
-        
-        myMeshA.forEachEdge(printEdge<montype>, (void *)NULL);
-    }
-    else
-         std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
+        //~ myMeshA.forEachHalfEdge(printHalfEdge<montype>, (void *)NULL);
+       //~ // myMeshA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
+        //~ 
+        //~ myMeshA.forEachEdge(printEdge<montype>, (void *)NULL);
+    //~ }
+    //~ else
+         //~ std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
          
          
          
