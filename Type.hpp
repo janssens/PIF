@@ -10,6 +10,7 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+//~ #define DEBUG
 
 #include <iostream>
 #include <typeinfo>
@@ -28,12 +29,18 @@
  
 namespace pif {
 		
-	template<class T> class Vertex;
+	template <class T> class Vertex;
 	template <class T> class HalfEdge;
 	template <class T> class Edge;
-	template<class T> class Vect;
+	template <class T> class Vect;
 	template <class T> class Face;
 
+	template <class T> T abs(T value){
+			if (value>(T)0)
+				return value;
+			else
+				return -value;
+	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -619,14 +626,15 @@ namespace pif {
 					std::cerr << "/!\\ PIF Error: " << "Face f is not initialized, f.computeNormal() not defined! " << std::endl;
 					exit(1);
 				}else{
-					Vertex<T> a = _data->edge.getVertex(); 
-					HalfEdge<T> tmp = _data->edge.getNext();
-					Vertex<T> b = tmp.getVertex();
-					Vertex<T> c = tmp.getNext().getVertex();
-					Vect<T> ab(a,b);
-					Vect<T> ac(a,c);
-					_data->normal = ab*ac;
-					//_data->normal.normalise();
+					Vertex<T> a = _data->edge.getVertex();
+					Vertex<T> b = _data->edge.getNext().getVertex();
+					HalfEdge<T> tmp = _data->edge.getNext().getNext();
+					while (_data->normal.isNull()){
+						Vertex<T> c = tmp.getVertex();
+						Vect<T> ab(a,b);
+						Vect<T> ac(a,c);
+						_data->normal = ab*ac;
+					}
 					_data->d = -(_data->normal.getDx()*a.getX()+_data->normal.getDy()*a.getY()+_data->normal.getDz()*a.getZ());
 				}
 			}
@@ -809,11 +817,6 @@ namespace pif {
 				HalfEdge<T> halfEdge = firstHalfEdge;
 				do { // for each halfedge in the face
 				
-				
-					//~ for ( int i=0; i < vertex_array.size(); i++)
-						//~ std::cout << vertex_array[i];
-					//~ std::cout << std::endl;
-				
 					Vertex<T> v = halfEdge.getVertex();
 					//~ std::cout << "reading: " << v << std::endl;
 					typename std::vector<Vertex<T> >::iterator itv;
@@ -834,7 +837,6 @@ namespace pif {
 			
 			int tmpint=0;
 			int max = vertex_array.size();
-			//~ std::cout << "vertex_array.size():" << vertex_array.size() << std::endl;
 			for ( int i=0; i < max; i++)
 				o << vertex_array[i] << std::endl;
 			for (it=faces.begin(); it!=faces.end(); ++it){
@@ -878,9 +880,12 @@ namespace pif {
         fichier >> VertexCount;
         fichier >> FaceCount;
         fichier >> EdgeCount;
-        //~ std::cout << "VertexCount:" << VertexCount << std::endl;
-        //~ std::cout << "FaceCount:" << FaceCount << std::endl;
-        //~ std::cout << "EdgeCount:" << EdgeCount << std::endl;
+        #ifdef DEBUG
+        std::cout << "VertexCount:" << VertexCount << std::endl;
+        std::cout << "FaceCount:" << FaceCount << std::endl;
+        std::cout << "EdgeCount:" << EdgeCount << std::endl;
+        #endif
+
         std::getline(fichier, contenu);  //get the end of the line
 		
 		typename std::vector<Vertex<T> > vertex;
@@ -892,12 +897,11 @@ namespace pif {
 			std::getline(fichier, contenu); //get the end of the line
 			Vertex<T> v(x,y,z);
 			vertex.push_back(v);
-			//~ std::cout << i << ":" << v << std::endl;
+			#ifdef DEBUG
+			std::cout << "#" << i << ":" << v << std::endl;
+			#endif
 		}
-		//~ typename std::vector<Vertex<T> >::iterator it;
-		//~ for ( it=vertex.begin() ; it < vertex.end(); it++ )
-			//~ std::cout << *it << ",";
-		//~ std::cout << std::endl;
+		
 		
 		typename std::vector<Face<T> > faces;
 		
@@ -924,18 +928,23 @@ namespace pif {
 			do{ //for all Vertex in the face
 				previousVertexIndex = VertexIndex;
 				fichier >> VertexIndex;
-				//~ std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
+				#ifdef DEBUG
+				std::cout << previousVertexIndex << "->" << VertexIndex << " (boucle)" << std::endl;
+				#endif
 				HalfEdge<T> currentHalfEdge(vertex.at(VertexIndex));
 				nbOfHalfEdges = link[VertexIndex].size();
 				pairFound = false;
 				if (nbOfHalfEdges){ // there is at least one halfedge going somewhere from here
-					//~ std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
+					#ifdef DEBUG
+					std::cout << nbOfHalfEdges << " halfedge starting from " << VertexIndex << std::endl;
+					#endif
 					for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 						tmp_he = link[VertexIndex][k];
 						if (tmp_he.getVertex()==vertex.at(previousVertexIndex)) { // the pair exist!
 							currentHalfEdge.setPair(tmp_he);
-							//~ tmp_he.setPair(currentHalfEdge);
-							//~ std::cout << "->" << VertexIndex << "(" << currentHalfEdge << ") paired with " << "->" << previousVertexIndex << "(" << tmp_he << ")" << std::endl;
+							#ifdef DEBUG
+							std::cout << "->" << VertexIndex << "(" << currentHalfEdge << ") paired with " << "->" << previousVertexIndex << "(" << tmp_he << ")" << std::endl;
+							#endif
 							link[VertexIndex].erase(link[VertexIndex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 						}
@@ -943,24 +952,34 @@ namespace pif {
 				}
 				if (!pairFound) { // the pair do not exist yet!
 					link[previousVertexIndex].push_back(currentHalfEdge); // this new halfedge is going from previousVertex to Vertex, we keep track of that
-					//~ std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
+					#ifdef DEBUG
+					std::cout << "we keep track of " << previousVertexIndex << "->" << VertexIndex << std::endl;
+					#endif
 				}
 				previousHalfEdge.setNext(currentHalfEdge);
 				previousHalfEdge = currentHalfEdge;
 				j++;//we just read one more Vertex
 			} while (j < nbOfVertexInThisFace);
-			//~ std::cout << "->" << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
+			#ifdef DEBUG
+			std::cout << "->" << VertexIndex << "->" << indexOfFirstVertex << " (hors boucle)" << std::endl;
+			#endif
 			previousHalfEdge.setNext(firstsHalfEdge);// and the cycle is complete
 			nbOfHalfEdges = link[indexOfFirstVertex].size();// all the half edge who start here
 			pairFound = false;
 			if (nbOfHalfEdges){ // there is at least one halfedge who start here
-				//~ std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
+				#ifdef DEBUG
+				std::cout << nbOfHalfEdges << " halfedge starting from " << indexOfFirstVertex << std::endl;
+				#endif
 				for (int k=0; (k < nbOfHalfEdges)&&(!pairFound); k++){ //lets find the pair
 					tmp_he = link[indexOfFirstVertex][k];
 					if (tmp_he.getVertex()==vertex.at(VertexIndex)) { // the pair exist!
-							//~ std::cout << indexOfFirstVertex << "(" << firstsHalfEdge << ") paired with " << "->" << VertexIndex << "(" << tmp_he << ")" << std::endl;
+							#ifdef DEBUG
+							std::cout << indexOfFirstVertex << "(" << firstsHalfEdge << ") paired with " << "->" << VertexIndex << "(" << tmp_he << ")" << std::endl;
+							#endif
 							firstsHalfEdge.setPair(tmp_he);
-							//~ tmp_he.setPair(firstsHalfEdge);
+							#ifdef DEBUG
+							tmp_he.setPair(firstsHalfEdge);
+							#endif
 							link[indexOfFirstVertex].erase(link[indexOfFirstVertex].begin()+k);//the two vertex are paired, we dont need to keep trace of them anymore.
 							pairFound = true; //leave the for loop with result found
 					}
@@ -968,11 +987,22 @@ namespace pif {
 			}
 			if (!pairFound) { // the pair do not exist yet!
 				link[VertexIndex].push_back(firstsHalfEdge);// we know from were the first half edge was going, and we keep track of that
-				//~ std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
+				#ifdef DEBUG
+				std::cout << "we keep track of " << VertexIndex << "->" << indexOfFirstVertex << std::endl;
+				#endif
 			}
 			Face<T> face(firstsHalfEdge);
+			
+			HalfEdge<T> tmpHalfEdge = firstsHalfEdge;
+			do {
+				tmpHalfEdge.setFace(face); //associer 
+				tmpHalfEdge = tmpHalfEdge.getNext();
+			} while (tmpHalfEdge != firstsHalfEdge); // pour chaque halfhedge de la face
+			
 			myMesh.push(face);
-			//~ std::cout << "face:" << face << std::endl;
+			#ifdef DEBUG
+			std::cout << "face:" << face << std::endl;
+			#endif
 			std::getline(fichier, contenu); //get the end of the line
 		}
 		int leftOver=0;
@@ -1026,6 +1056,7 @@ namespace pif {
 						mu +=  face.getB()*edge.getA().getY() ;
 						mu +=  face.getC()*edge.getA().getZ() ;
 						mu /=  denominator;
+						mu /= sqrt((double)(face.getA()*face.getA() + face.getB()*face.getB() + face.getC()*face.getC()));
 						if ((mu<1)&&(mu>0)) { //For the intersection point to lie on the line segment, mu must be between 0 and denominator.
 							Vertex<T> ptmp =  edge.getA() + mu *(edge.getB() - edge.getA()); //P = P1 + mu (P2 - P1)
 							bool liesOn = false;
@@ -1042,22 +1073,52 @@ namespace pif {
 							int i, j;
 							i=0;
 							j=nvert - 1;
-														
-							for (i = 0, j = nvert-1; i < nvert; j = i++) {
-								if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) &&
-								 (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getX()) )
-								   liesOn = !liesOn;
+							
+							T tmp_x = abs(face.getNormal().getDx());
+							T tmp_y = abs(face.getNormal().getDy());
+							T tmp_z = abs(face.getNormal().getDz());
+											
+							if (tmp_z>tmp_x&&tmp_z>tmp_y) { // projection on Z axis
+								#ifdef DEBUG
+								std::cout << "projection on Z axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+								#endif
+								for (i = 0, j = nvert-1; i < nvert; j = i++) {
+									if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getX()) )
+										liesOn = !liesOn;
+								}
+							} else if (tmp_x>tmp_y&&tmp_x>tmp_z) { // projection on X axis
+								#ifdef DEBUG
+								std::cout << "projection on X axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+								#endif
+								for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
+									if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getZ() < (vertex[j].getZ()-vertex[i].getZ()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getZ()) )
+										liesOn = !liesOn;
+								}
+							} else { // projection on Y axis
+								#ifdef DEBUG
+								std::cout << "projection on Y axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+								#endif
+								for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
+									if ( ((vertex[i].getZ()>ptmp.getZ()) != (vertex[j].getZ()>ptmp.getZ())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getZ()-vertex[i].getZ()) / (vertex[j].getZ()-vertex[i].getZ()) + vertex[i].getX()) )
+										liesOn = !liesOn;
+								}	 
 							}
 							if (liesOn) {
 								point = ptmp;
 							}else{
+								#ifdef DEBUG
 								std::cout << "intersection with the plan doesn't lie on the face" << std::endl;
+								#endif
 							}
 						}else{
+							#ifdef DEBUG
 							std::cout << "intersection with the plan doesn't lie on the segment" << std::endl;
+							#endif
 						}
 					}else{
+						#ifdef DEBUG
 						std::cout << "intersection doesn't exist" << std::endl;
+						#endif
 					} 
 				};
 			};

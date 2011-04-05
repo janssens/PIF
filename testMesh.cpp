@@ -26,6 +26,25 @@ template<class T> void printEdge(void *edge,void *nothing){
 		Edge<T> *e = (Edge<T>*) edge;
 		std::cout << *e << std::endl; 
 }
+
+template<class T> void inter(void *edge,void *mesh){
+
+		Mesh<T> *m = (Mesh<T> *) mesh;
+		Edge<T> *e = (Edge<T>*) edge;
+		std::list<Face<T> > faces = m->getFaces(); // list of the faces
+		typename std::list<Face<T> >::iterator it;
+		for (it=faces.begin(); it!=faces.end(); ++it){
+			Intersection<T> i(*e,*it);
+			if (i.exist()){
+				std::cout << "Intersection of " << (*e) << " with (" << (*it) ;
+				std::cout << "): " << i.getPoint() << std::endl;
+			}
+		}
+}
+
+// find by edge
+// find by face
+
 template<class T> void printHalfEdge(void *halfEdge,void *nothing){
 		HalfEdge<T> *he = (HalfEdge<T>*) halfEdge;
 		std::cout << *he << std::endl; 
@@ -122,12 +141,15 @@ int main(int argc, char **argv) {
 	std::cout << "myMesh.stat()" << std::endl;
 	std::cout << "myMesh:\n" << myMesh << std::endl;
 	myMesh.forEachEdge(printEdge<montype>, (void *)NULL);
-	
-	//~ int whatever = 56;
-	//~ myMesh.forEachFace( printFace<montype>, (void *) &whatever );
-         
-	std::ifstream myOff1("cube.off", std::ios::in);
-	std::ifstream myOff2("cube2.off", std::ios::in);
+    //~ 
+    //~ char mesh1[] = "cube.off";
+    //~ char mesh2[] = "cube2.off";
+    
+    char mesh1[] = "tt.off";
+    char mesh2[] = "tt2.off";
+    
+	std::ifstream myOff1(mesh1, std::ios::in);
+	std::ifstream myOff2(mesh2, std::ios::in);
 	if(myOff1&&myOff2)
     {   
 		Mesh<montype> myMeshFromFileA;
@@ -136,29 +158,14 @@ int main(int argc, char **argv) {
 		myOff2 >> myMeshFromFileB;
         myOff1.close();
         myOff2.close();
-		std::cout << "myMeshFromFileA (cube.off):\n" << myMeshFromFileA << std::endl;
-		std::cout << "myMeshFromFileB (cube2.off):\n" << myMeshFromFileB << std::endl;
+		std::cout << "myMeshFromFileA (" << mesh1 << "):\n" << myMeshFromFileA << std::endl;
+		std::cout << "myMeshFromFileB (" << mesh2 << "):\n" << myMeshFromFileB << std::endl;
 		
-		//~ myMeshFromFileA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
-		myMeshFromFileA.forEachEdge(printEdge<montype>, (void *)NULL);
+		myMeshFromFileA.forEachEdge(inter<montype>, (void *)&myMeshFromFileB);
+		myMeshFromFileB.forEachEdge(inter<montype>, (void *)&myMeshFromFileA);
     }
     else
-         std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
-	
-
-        //~ Vertex<montype> v(0,0,0);
-        //~ HalfEdge<montype> he(v);
-        //~ myMeshA.forEachFace(printFaceVsEdge<montype>,(void *) &he);
-        //~ myMeshA.forEachHalfEdge(printHalfEdge<montype>, (void *)NULL);
-       //~ // myMeshA.forEachHalfEdge(printHalfEdge2<montype>, (void *)NULL);
-        //~ 
-        //~ myMeshA.forEachEdge(printEdge<montype>, (void *)NULL);
-    //~ }
-    //~ else
-         //~ std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
-         
-         
-         
+         std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
 	
 	
 	return 0;
