@@ -28,7 +28,6 @@ template<class T> void printEdge(void *edge,void *nothing){
 }
 
 template<class T> void inter(void *edge,void *mesh){
-
 		Mesh<T> *m = (Mesh<T> *) mesh;
 		Edge<T> *e = (Edge<T>*) edge;
 		std::list<Face<T> > faces = m->getFaces(); // list of the faces
@@ -36,10 +35,27 @@ template<class T> void inter(void *edge,void *mesh){
 		for (it=faces.begin(); it!=faces.end(); ++it){
 			Intersection<T> i(*e,*it);
 			if (i.exist()){
-				std::cout << "Intersection of " << (*e) << " with (" << (*it) ;
-				std::cout << "): " << i.getPoint() << std::endl;
+				std::cout << "add " << i.getPoint() << " as an intersection for e =" << *e << std::endl;
+				e->addIntersection(i);
 			}
 		}
+}
+
+template<class T> void printInter(void *edge, void *d = NULL){
+		Edge<T> *e = (Edge<T>*) edge;
+		std::cout << *e << std::endl;
+		std::list<Intersection<T> > intersections = e->getHalfEdge().getIntersections();
+		int tsize = intersections.size();
+		std::cout << "intersections.size: " << tsize << std::endl;
+		typename std::list<Intersection<T> >::iterator it;
+		int tt = 0;
+		for (it=intersections.begin(); tt<tsize; ++it, tt++){
+			std::cout << *it << std::endl;
+		}
+		if (tsize>1)
+			std::cout << " Closest Intersection: " << e->getHalfEdge().getClosestIntersection() << std::endl;
+		if (tsize>1)
+			std::cout << " Farest Intersection: " << e->getHalfEdge().getFarestIntersection() << std::endl;
 }
 
 // find by edge
@@ -162,11 +178,17 @@ int main(int argc, char **argv) {
 		std::cout << "myMeshFromFileB (" << mesh2 << "):\n" << myMeshFromFileB << std::endl;
 		
 		myMeshFromFileA.forEachEdge(inter<montype>, (void *)&myMeshFromFileB);
+		std::cout << "==== done A inter B ====" << std::endl;
 		myMeshFromFileB.forEachEdge(inter<montype>, (void *)&myMeshFromFileA);
+		std::cout << "==== done B inter A ====" << std::endl;
+		
+		//myMeshFromFileA.getFaces.front().getHalfEdge().
+		
+		myMeshFromFileA.forEachEdge(printInter<montype>);
+		myMeshFromFileB.forEachEdge(printInter<montype>);
     }
     else
          std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
-	
 	
 	return 0;
 }

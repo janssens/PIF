@@ -34,6 +34,7 @@ namespace pif {
 	template <class T> class Edge;
 	template <class T> class Vect;
 	template <class T> class Face;
+	template <class T> class Intersection;
 
 	template <class T> T abs(T value){
 			if (value>(T)0)
@@ -188,6 +189,15 @@ namespace pif {
 			return o << v.getX() << " " << v.getY() << " " << v.getZ();
 		}
 	};
+	
+	template<class T> T norm(const Vertex<T> v){
+		return v.getX()*v.getX()+v.getY()*v.getY()+v.getZ()*v.getZ();
+	};
+	
+	template<class T> T dist(const Vertex<T> v1,const Vertex<T> v2){
+		return norm(v2-v1);
+	};
+
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,6 +256,48 @@ namespace pif {
 			};
 			bool isNull(void) const { return !(bool)_data;};
 			////
+			void addIntersection(const Intersection<T> i) {
+					_data->listOfIntersection.push_back(i);
+					if (_data->pair.isNull()){
+						std::cerr << "/!\\ PIF Error: " << "HalfEdge h as no pair, h.getPair() not defined! (h:" << *this << ")" << std::endl;
+						exit(1);	
+					}
+					_data->pair._data->listOfIntersection.push_back(i);
+					//~ std::cout << "list back:" << _data->listOfIntersection.back() << std::endl;
+			}
+			
+			std::list<Intersection<T> > getIntersections(void) const { return _data->listOfIntersection; }
+			
+			Intersection<T> getClosestIntersection(void) const {
+				typename std::list<Intersection<T> >::iterator it;
+				it = _data->listOfIntersection.begin();
+				Intersection<T> result = *it;
+				T refDist;
+				for (it++, refDist = dist(_data->vertex,result.getPoint());it != _data->listOfIntersection.end(); it++){
+					T tmpDist = dist(_data->vertex,it->getPoint());
+					if (tmpDist < refDist) {
+						refDist = tmpDist;
+						result = *it;
+					}
+				}
+				return result;
+			}
+			
+			Intersection<T> getFarestIntersection(void) const {
+				typename std::list<Intersection<T> >::iterator it;
+				it = _data->listOfIntersection.begin();
+				Intersection<T> result = *it;
+				T refDist;
+				for (;it != _data->listOfIntersection.end(); it++){
+					T tmpDist = (T)0;
+					if (tmpDist > refDist) {
+						refDist = tmpDist;
+						result = *it;
+					}
+				}
+				return result;
+			}
+			////
 			void setVertex(Vertex<T> v) {  
 				if (!_data){
 					boost::shared_ptr<struct Obj> sp(new Obj(v));
@@ -290,6 +342,7 @@ namespace pif {
 				Face<T> face;
 				HalfEdge<T> pair;
 				HalfEdge<T> next;
+				std::list<Intersection<T> > listOfIntersection;
 				Obj(const Vertex<T> v) { vertex = v; };
 				Obj(const Vertex<T> v,const Face<T> f,const HalfEdge<T> p,const HalfEdge<T> n) { vertex = v; face = f; pair= p; next = n; };
 			};
@@ -317,10 +370,17 @@ namespace pif {
 			Edge(HalfEdge<T> he) : _data(new Obj(he)) {};
 			Edge(const Vertex<T> a,const Vertex<T> b) : _data(new Obj(a,b)) {};
 			////
+			void addIntersection(const Intersection<T> i) {
+					_data->halfedge.addIntersection(i);
+			}
+			////
 			Vertex<T> getA(void) const { return _data->halfedge.getPair().getVertex(); }
 			Vertex<T> getB(void) const { return _data->halfedge.getVertex(); }
 			HalfEdge<T> getHalfEdge(void) const { return _data->halfedge; }
 			HalfEdge<T> getPair(void) const { return _data->halfedge.getPair(); }
+			
+			std::list<Intersection<T> > getIntersections(void) const { return _data->halfedge.getIntersections(); }
+			
 			bool isNull(void) const { return !(bool)_data;};
 			////
 			Edge<T> duplicate(void) {
@@ -329,6 +389,7 @@ namespace pif {
 				Edge<T> e(p1,p2);
 				return e;
 			}
+			
 			Edge<T> operator-()const //Negative ab is ba
 			{
 				Edge<T> opos(_data->halfedge.getPair());
@@ -763,7 +824,7 @@ namespace pif {
 				}
 			}
 			
-			void forEachEdge( void (*fct) (void *,void *), void * data){
+			void forEachEdge( void (*fct) (void *,void *), void * data = NULL){
 				typename std::list<Face<T> >::iterator itFace;
 				std::vector<Edge<T> > alreadySeen;
 				for (itFace=_faces.begin(); itFace!=_faces.end(); ++itFace){ // for all face
@@ -1050,6 +1111,7 @@ namespace pif {
 					T denominator = face.getA()*(edge.getA().getX()-edge.getB().getX());
 					denominator += face.getB()*(edge.getA().getY()-edge.getB().getY());
 					denominator += face.getC()*(edge.getA().getZ()-edge.getB().getZ());
+					//si denominator positif = sort
 					if (denominator!=(T)0) { //intersection exist (If the denominator is 0 then the line is parallel to the plane and they don't intersect.)
 						T mu = face.getD() ;
 						mu +=  face.getA()*edge.getA().getX() ;
@@ -1105,6 +1167,7 @@ namespace pif {
 							}
 							if (liesOn) {
 								point = ptmp;
+								
 							}else{
 								#ifdef DEBUG
 								std::cout << "intersection with the plan doesn't lie on the face" << std::endl;
@@ -1114,6 +1177,7 @@ namespace pif {
 							#ifdef DEBUG
 							std::cout << "intersection with the plan doesn't lie on the segment" << std::endl;
 							#endif
+							//
 						}
 					}else{
 						#ifdef DEBUG
@@ -1125,5 +1189,13 @@ namespace pif {
 			boost::shared_ptr<Obj> _data;
 	};
 	
+	template<class T> std::ostream& operator<< (std::ostream& o,const Intersection<T> i){
+		if (i.isNull()) {
+			return o << "(NULL)";
+		}else{
+			return o << "int(" << i.getPoint() << ")";
+		}
+	};
+
 }
 #endif
