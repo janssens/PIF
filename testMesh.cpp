@@ -28,16 +28,26 @@ template<class T> void printEdge(void *edge,void *nothing){
 }
 template<class T> void printHalfEdge(void *halfedge,void *nothing){
 		HalfEdge<T> *he = (HalfEdge<T>*) halfedge;
-		if (he->isInside()) {
-			std::cout << *he << " is inside" << std::endl;
+		std::cout << *he << std::endl;
+		
+}
+template<class T> void printVertex(void *vertex,void *nothing){
+		Vertex<T> *v = (Vertex<T>*) vertex;
+		if (v->isInside()) {
+			std::cout << *v << " is inside" << std::endl;
 		}else{
-			std::cout << *he << " is outside" << std::endl;
+			std::cout << *v << " is outside" << std::endl;
+			//~ if (v->isClosestIntersectionInSpaceDefined())
+				//~ std::cout << "Closest Intersection is: " << v->getClosestIntersectionInSpace().getPoint() << std::endl;
 		}
 }
 
 template<class T> void inter(void *edge,void *mesh){
 		Mesh<T> *m = (Mesh<T> *) mesh;
 		Edge<T> *e = (Edge<T>*) edge;
+		#ifdef DEBUG
+			std::cout << "Dealing with edge: " << *e << std::endl;
+		#endif
 		std::list<Face<T> > faces = m->getFaces(); // list of the faces
 		typename std::list<Face<T> >::iterator it;
 		for (it=faces.begin(); it!=faces.end(); ++it){
@@ -193,7 +203,11 @@ int main(int argc, char **argv) {
 		myMeshFromFileA.forEachEdge(printInter<montype>);
 		myMeshFromFileB.forEachEdge(printInter<montype>);
 		
-		myMeshFromFileA.forEachHalfEdge(printHalfEdge<montype>);
+		//~ std::cout << "==== forEachHalfEdge ====" << std::endl;
+		//~ myMeshFromFileA.forEachHalfEdge(printHalfEdge<montype>);
+		std::cout << "==== forEachVertex ====" << std::endl;
+		myMeshFromFileA.forEachVertex(printVertex<montype>);
+		myMeshFromFileB.forEachVertex(printVertex<montype>);
 		//~ Mesh<montype> myMeshFromInter;
     }
     else

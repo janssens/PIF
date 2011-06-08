@@ -115,6 +115,45 @@ namespace pif {
 				return p;
 			};
 			////
+			bool isClosestIntersectionInSpaceDefined(void) const {				
+				if (!_data){
+					std::cerr << "/!\\ PIF Error: " << "HalfEdge h is not initialized, h.isClosestIntersectionInSpaceDefined() not defined! " << std::endl;
+					exit(1);
+				}
+				if (_data->closestIntersectionInSpace.isNull()){
+					return false;	
+				}else{
+					return true;
+				}
+			};
+			Intersection<T> getClosestIntersectionInSpace(void) const {				
+				if (!_data){
+					std::cerr << "/!\\ PIF Error: " << "HalfEdge h is not initialized, h.getClosestIntersectionInSpace() not defined! " << std::endl;
+					exit(1);
+				}
+				if (_data->closestIntersectionInSpace.isNull()){
+					std::cerr << "/!\\ PIF Error: " << "HalfEdge h as no known close intersection, h.getClosestIntersectionInSpace() not defined! (h:" << *this << ")" << std::endl;
+					exit(1);	
+				}
+				return _data->closestIntersectionInSpace; 
+			};
+			void setClosestIntersectionInSpace(Intersection<T> i) {				
+				if (!_data){
+					std::cerr << "/!\\ PIF Error: " << "This HalfEdge h is not initialized, h.setClosestIntersectionInSpace() cannot be used!" << std::endl;
+					exit(1);
+				}
+				_data->closestIntersectionInSpace = i;
+			};
+			bool isInside(void) const {
+				if (_data->closestIntersectionInSpace.isNull()){
+					return false;
+				}else{
+					Vect<T> v1(*this,_data->closestIntersectionInSpace.getPoint());
+					Vect<T> v2 = _data->closestIntersectionInSpace.getFace().getNormal();
+					return (bool)(v1.dot(v2)>0);
+				}
+			};
+			////
 			Vertex<T> operator+(const Vertex<T> v)const {
 				if (!_data){
 					std::cerr << "/!\\ PIF Error: " << "Vertex is not initialized, it should not be used! (operator +)" << std::endl;
@@ -173,6 +212,7 @@ namespace pif {
 				T x;
 				T y;
 				T z;
+				Intersection<T> closestIntersectionInSpace;
 				Obj(T a,T b,T c) { x = a; y = b; z = c;};
 			};
 			boost::shared_ptr<Obj> _data;
@@ -254,38 +294,7 @@ namespace pif {
 				}
 				return _data->next; 
 			};
-			bool isClosestIntersectionInSpaceDefined(void) const {				
-				if (!_data){
-					std::cerr << "/!\\ PIF Error: " << "HalfEdge h is not initialized, h.isClosestIntersectionInSpaceDefined() not defined! " << std::endl;
-					exit(1);
-				}
-				if (_data->closestIntersectionInSpace.isNull()){
-					return false;	
-				}else{
-					return true;
-				}
-			};
-			Intersection<T> getClosestIntersectionInSpace(void) const {				
-				if (!_data){
-					std::cerr << "/!\\ PIF Error: " << "HalfEdge h is not initialized, h.getClosestIntersectionInSpace() not defined! " << std::endl;
-					exit(1);
-				}
-				if (_data->closestIntersectionInSpace.isNull()){
-					std::cerr << "/!\\ PIF Error: " << "HalfEdge h as no known close intersection, h.getClosestIntersectionInSpace() not defined! (h:" << *this << ")" << std::endl;
-					exit(1);	
-				}
-				return _data->closestIntersectionInSpace; 
-			};
 			bool isNull(void) const { return !(bool)_data;};
-			bool isInside(void) const {
-				if (_data->closestIntersectionInSpace.isNull()){
-					return false;
-				}else{
-					Vect<T> v1(_data->vertex,_data->closestIntersectionInSpace.getPoint());
-					Vect<T> v2 = _data->closestIntersectionInSpace.getFace().getNormal();
-					return (bool)(v1.dot(v2)>0);
-				}
-			};
 			////
 			void addIntersection(const Intersection<T> i) {
 					_data->listOfIntersection.push_back(i);
@@ -358,13 +367,6 @@ namespace pif {
 				}
 				_data->next = he;
 			};
-			void setClosestIntersectionInSpace(Intersection<T> i) {				
-				if (!_data){
-					std::cerr << "/!\\ PIF Error: " << "This HalfEdge h is not initialized, h.setClosestIntersectionInSpace() cannot be used!" << std::endl;
-					exit(1);
-				}
-				_data->closestIntersectionInSpace = i;
-			};
 			////
 			bool operator!=(const HalfEdge<T> he)const 
 			{
@@ -374,6 +376,30 @@ namespace pif {
 			{
 				return _data==he._data;
 			}
+			bool operator >(const HalfEdge<T> he) const{
+				if (this->getVertex()>he.getVertex())
+					return true;
+				else
+					return false;
+			}
+			bool operator >=(const HalfEdge<T> he) const{
+				if (this->getVertex()>=he.getVertex())
+					return true;
+				else
+					return false;
+			}
+			bool operator <(const HalfEdge<T> he) const{
+				if (this->getVertex()<he.getVertex())
+					return true;
+				else
+					return false;
+			}
+			bool operator <=(const HalfEdge<T> he) const{
+				if (this->getVertex()<=he.getVertex())
+					return true;
+				else
+					return false;
+			}
 		private:
 			struct Obj{
 				Vertex<T> vertex;
@@ -381,7 +407,6 @@ namespace pif {
 				HalfEdge<T> pair;
 				HalfEdge<T> next;
 				std::list<Intersection<T> > listOfIntersection;
-				Intersection<T> closestIntersectionInSpace;
 				Obj(const Vertex<T> v) { vertex = v; };
 				Obj(const Vertex<T> v,const Face<T> f,const HalfEdge<T> p,const HalfEdge<T> n) { vertex = v; face = f; pair= p; next = n; };
 			};
@@ -907,10 +932,25 @@ namespace pif {
 			}
 			
 			void forEachVertex( void (*fct) (void *,void *), void * data = NULL){
-				typename std::list<Face<T> >::iterator it;
-				for (it=_faces.begin(); it!=_faces.end(); ++it){
-					//~ std::cout << *it << std::endl;
-					it->forEachVertex(fct,data);
+				typename std::list<Face<T> >::iterator itFace;
+				std::vector<Vertex<T> > alreadySeen;
+				for (itFace=_faces.begin(); itFace!=_faces.end(); ++itFace){ // for all face
+					//~ std::cout << "dealing with face:" << *itFace << std::endl;
+					HalfEdge<T> firstHalfEdge = itFace->getHalfEdge();
+					HalfEdge<T> currentHalfEdge = firstHalfEdge;
+					do { // for all halfedges on the face
+						Vertex<T> v = currentHalfEdge.getVertex();
+						int max = alreadySeen.size();
+						int tmp = 0;
+						for (; (tmp<max) && (alreadySeen.at(tmp)<v); tmp ++){ } //check if the Edge is already seen
+						if (tmp==max||alreadySeen.at(tmp)!=v) //Edge is not already seen
+						{
+							//~ std::cout << "just seen:" << e << std::endl;
+							fct((void *) &v, data);
+							alreadySeen.insert(alreadySeen.begin()+tmp,v); //this Edge is now seen
+						}
+						currentHalfEdge = currentHalfEdge.getNext();
+					} while (currentHalfEdge != firstHalfEdge);
 				}
 			}
 			
@@ -1162,19 +1202,32 @@ namespace pif {
 			Face<T> getFace(void) const {
 					return _data->face;
 			};
-			void giveFeedback(void){ // lets give a feedback to the vertex of the edge (in fact, the halfedge behind) in order to compute the inside & outside information		
+			void giveFeedback(void){ // lets give a feedback to the vertex of the two halfedge behind the edge (lost?) in order to compute the inside & outside information		
 				if ((bool)_data&&!(bool)_data->point.isNull()) { // intersection exist!
-					if (_data->edge.getHalfEdge().isClosestIntersectionInSpaceDefined()){//yes
-						if (dist(_data->edge.getHalfEdge().getClosestIntersectionInSpace().getPoint(),_data->edge.getHalfEdge().getVertex())>dist(this->getPoint(),_data->edge.getHalfEdge().getVertex())){ // this intersection is the closest so far
-							_data->edge.getHalfEdge().setClosestIntersectionInSpace(*this);
+					if (_data->edge.getHalfEdge().getVertex().isClosestIntersectionInSpaceDefined()){//yes
+						if (dist(_data->edge.getHalfEdge().getVertex().getClosestIntersectionInSpace().getPoint(),_data->edge.getHalfEdge().getVertex())>dist(this->getPoint(),_data->edge.getHalfEdge().getVertex())){ // this intersection is the closest so far
+							_data->edge.getHalfEdge().getVertex().setClosestIntersectionInSpace(*this);
 							#ifdef DEBUG
-								std::cout << "=> feedback for " << _data->edge.getHalfEdge().getVertex() << ": " << "the closest intersection is now " << _data->edge.getHalfEdge().getClosestIntersectionInSpace().getPoint() << std::endl;
+								std::cout << "=> feedback for " << _data->edge.getHalfEdge().getVertex() << ": " << "the closest intersection is now " << _data->edge.getHalfEdge().getVertex().getClosestIntersectionInSpace().getPoint() << std::endl;
 							#endif
 						}
 					}else{//no
-						_data->edge.getHalfEdge().setClosestIntersectionInSpace(*this); // lets defined it
+						_data->edge.getHalfEdge().getVertex().setClosestIntersectionInSpace(*this); // lets defined it
 						#ifdef DEBUG
-							std::cout << "=> feedback for " << _data->edge.getHalfEdge().getVertex() << ":" << "the closest intersection is " << _data->edge.getHalfEdge().getClosestIntersectionInSpace().getPoint() << std::endl;
+							std::cout << "=> feedback for " << _data->edge.getHalfEdge().getVertex() << ":" << "the closest intersection is " << _data->edge.getHalfEdge().getVertex().getClosestIntersectionInSpace().getPoint() << std::endl;
+						#endif
+					}
+					if (_data->edge.getPair().getVertex().isClosestIntersectionInSpaceDefined()){//yes
+						if (dist(_data->edge.getPair().getVertex().getClosestIntersectionInSpace().getPoint(),_data->edge.getPair().getVertex())>dist(this->getPoint(),_data->edge.getPair().getVertex())){ // this intersection is the closest so far
+							_data->edge.getPair().getVertex().setClosestIntersectionInSpace(*this);
+							#ifdef DEBUG
+								std::cout << "=> feedback for " << _data->edge.getPair().getVertex() << ": " << "the closest intersection is now " << _data->edge.getPair().getVertex().getClosestIntersectionInSpace().getPoint() << std::endl;
+							#endif
+						}
+					}else{//no
+						_data->edge.getPair().getVertex().setClosestIntersectionInSpace(*this); // lets defined it
+						#ifdef DEBUG
+							std::cout << "=> feedback for " << _data->edge.getPair().getVertex() << ":" << "the closest intersection is " << _data->edge.getPair().getVertex().getClosestIntersectionInSpace().getPoint() << std::endl;
 						#endif
 					}
 				}
