@@ -26,6 +26,14 @@ template<class T> void printEdge(void *edge,void *nothing){
 		Edge<T> *e = (Edge<T>*) edge;
 		std::cout << *e << std::endl; 
 }
+template<class T> void printHalfEdge(void *halfedge,void *nothing){
+		HalfEdge<T> *he = (HalfEdge<T>*) halfedge;
+		if (he->isInside()) {
+			std::cout << *he << " is inside" << std::endl;
+		}else{
+			std::cout << *he << " is outside" << std::endl;
+		}
+}
 
 template<class T> void inter(void *edge,void *mesh){
 		Mesh<T> *m = (Mesh<T> *) mesh;
@@ -35,7 +43,9 @@ template<class T> void inter(void *edge,void *mesh){
 		for (it=faces.begin(); it!=faces.end(); ++it){
 			Intersection<T> i(*e,*it);
 			if (i.exist()){
+				#ifdef DEBUG
 				std::cout << "add " << i.getPoint() << " as an intersection for e =" << *e << std::endl;
+				#endif
 				e->addIntersection(i);
 			}
 		}
@@ -61,10 +71,6 @@ template<class T> void printInter(void *edge, void *d = NULL){
 // find by edge
 // find by face
 
-template<class T> void printHalfEdge(void *halfEdge,void *nothing){
-		HalfEdge<T> *he = (HalfEdge<T>*) halfEdge;
-		std::cout << *he << std::endl; 
-}
 template<class T> void printHalfEdge2(void *halfEdge,void *nothing){
 		HalfEdge<T> *he = (HalfEdge<T>*) halfEdge;
 		std::cout << *he << std::endl;
@@ -158,11 +164,11 @@ int main(int argc, char **argv) {
 	std::cout << "myMesh:\n" << myMesh << std::endl;
 	myMesh.forEachEdge(printEdge<montype>, (void *)NULL);
     //~ 
-    //~ char mesh1[] = "cube.off";
-    //~ char mesh2[] = "cube2.off";
+    char mesh1[] = "cube.off";
+    char mesh2[] = "cube2.off";
     
-    char mesh1[] = "tt.off";
-    char mesh2[] = "tt2.off";
+    //~ char mesh1[] = "tt.off";
+    //~ char mesh2[] = "tt2.off";
     
 	std::ifstream myOff1(mesh1, std::ios::in);
 	std::ifstream myOff2(mesh2, std::ios::in);
@@ -186,6 +192,9 @@ int main(int argc, char **argv) {
 		
 		myMeshFromFileA.forEachEdge(printInter<montype>);
 		myMeshFromFileB.forEachEdge(printInter<montype>);
+		
+		myMeshFromFileA.forEachHalfEdge(printHalfEdge<montype>);
+		//~ Mesh<montype> myMeshFromInter;
     }
     else
          std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
