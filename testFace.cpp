@@ -41,10 +41,10 @@ int main(int argc, char **argv) {
 	Edge<montype> e3(c,a);
 	std::cout << "e3(c,a): " << e3 << std::endl;
 	std::cout << "-e3: " << -e3 << std::endl;
-	listOfEdges.push_back(e1);
-	listOfEdges.push_back(e2);
-	listOfEdges.push_back(e3);
-	Face<montype> face(&listOfEdges);
+	e1.getHalfEdge().setNext(e2.getHalfEdge());
+	e2.getHalfEdge().setNext(e3.getHalfEdge());
+	e3.getHalfEdge().setNext(e1.getHalfEdge());
+	Face<montype> face(e1.getHalfEdge());
 	std::cout << "face(e1,e2,e3): " << face << std::endl;
 	a.setX(5);
 	std::cout << "a.x = 5; face: " << face << std::endl;

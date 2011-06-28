@@ -4,7 +4,7 @@
  * FileName: Type.hpp
  * Creation: 28.01.2011
  * Author: Gaëtan Janssens
- * Last Edit: 28.02.2011
+ * Last Edit: 27.06.2011
  * 
  */
 #ifndef TYPE_H
@@ -308,7 +308,7 @@ namespace pif {
 			
 			std::list<Intersection<T> > getIntersections(void) const { return _data->listOfIntersection; }
 			
-			Intersection<T> getClosestIntersection(void) const { //get the closest Intersection of _data->Vertex witch is the closest of B in a Edge
+			Intersection<T> getClosestIntersection(void) const { //get the closest Intersection of _data->Vertex
 				typename std::list<Intersection<T> >::iterator it;
 				it = _data->listOfIntersection.begin();
 				Intersection<T> result = *it;
@@ -323,7 +323,7 @@ namespace pif {
 				return result;
 			}
 			
-			Intersection<T> getFarestIntersection(void) const { //get the farest Intersection of _data->Vertex witch is the closest of A in a Edge
+			Intersection<T> getFarestIntersection(void) const { //get the farest Intersection of _data->Vertex
 				typename std::list<Intersection<T> >::iterator it;
 				it = _data->listOfIntersection.begin();
 				Intersection<T> result = *it;
@@ -595,6 +595,17 @@ namespace pif {
 				Vect<T> v(_data->dx,_data->dy,_data->dz);
 				return v;
 			};
+			
+			void normalise(void) {
+				if (!_data){
+					std::cerr << "/!\\ PIF Error: " << "Vect v is not initialized, it cannot be normalise!" << std::endl;
+					exit(1);
+				}
+				double length = sqrt((double)_data->dx*(double)_data->dx + (double)_data->dy*(double)_data->dy + (double)_data->dz*(double)_data->dz);
+				_data->dx /= (T)length;
+				_data->dy /= (T)length;
+				_data->dz /= (T)length;
+			};
 			////
 			Vect<T> operator+(const Vect<T> v)const {
 				if (!_data){
@@ -684,24 +695,14 @@ namespace pif {
 		public:
 			Face(void) {};
 			Face(HalfEdge<T> he) : _data(new Obj(he)) {
-				HalfEdge<T> halfEdge = _data->edge;
-				HalfEdge<T> firstHalfEdge = halfEdge;
+				HalfEdge<T> hE = _data->halfEdge;
+				HalfEdge<T> firstHalfEdge = hE;
 				do {
-					halfEdge.setFace(*this);
-					halfEdge = halfEdge.getNext();
-				} while (halfEdge != firstHalfEdge);
+					hE.setFace(*this);
+					hE = hE.getNext();
+				} while (hE != firstHalfEdge);
 			};
-			//~ Face(std::list<Edge<T> >* listOfEdges) : _data(new Obj(listOfEdges->begin()->getHalfEdge())){
-				//~ typename std::list<Edge<T> >::iterator it;
-				//~ for ( it = listOfEdges->begin(); it != listOfEdges->end();){
-					//~ Edge<T> a = *it;
-					//~ a.getHalfEdge().setFace(*this); //this face is now related to the halfedge
-					//~ it++;
-					//~ if (it != listOfEdges->end())
-						//~ a.getHalfEdge().setNext(it->getHalfEdge());
-				//~ }
-				//~ listOfEdges->back().getHalfEdge().setNext(listOfEdges->front().getHalfEdge());
-			//~ };
+			
 			bool isNull(void) const { return !(bool)_data;};
 			////
 			Vect<T> getNormal(void) const{ 
@@ -715,7 +716,7 @@ namespace pif {
 					std::cerr << "/!\\ PIF Error: " << "Face f is not initialized, f.getHalfEdge() not defined! " << std::endl;
 					exit(1);
 				}
-				return _data->edge; 
+				return _data->halfEdge; 
 			};
 			T getD(void) const{ 
 				if (!_data){
@@ -751,15 +752,16 @@ namespace pif {
 					std::cerr << "/!\\ PIF Error: " << "Face f is not initialized, f.computeNormal() not defined! " << std::endl;
 					exit(1);
 				}else{
-					Vertex<T> a = _data->edge.getVertex();
-					Vertex<T> b = _data->edge.getNext().getVertex();
-					HalfEdge<T> tmp = _data->edge.getNext().getNext();
+					Vertex<T> a = _data->halfEdge.getVertex();
+					Vertex<T> b = _data->halfEdge.getNext().getVertex();
+					HalfEdge<T> tmp = _data->halfEdge.getNext().getNext();
 					while (_data->normal.isNull()){
 						Vertex<T> c = tmp.getVertex();
 						Vect<T> ab(a,b);
 						Vect<T> ac(a,c);
 						_data->normal = ab*ac;
 					}
+					_data->normal.normalise();
 					_data->d = -(_data->normal.getDx()*a.getX()+_data->normal.getDy()*a.getY()+_data->normal.getDz()*a.getZ());
 				}
 			}
@@ -767,32 +769,32 @@ namespace pif {
 			
 			void forEachHalfEdge( void (*fct) (void *,void *), void * data){
 				if ((bool)_data) {
-					HalfEdge<T> halfEdge = _data->edge;
+					HalfEdge<T> halfEdge = _data->halfEdge;
 					do {
 						fct((void *) &halfEdge, data);
 						halfEdge = halfEdge.getNext();
-					} while (halfEdge != _data->edge);
+					} while (halfEdge != _data->halfEdge);
 				}
 			}
 			void forEachVertex( void (*fct) (void *,void *), void * data){
 				if ((bool)_data) {
-					HalfEdge<T> halfEdge = _data->edge;
+					HalfEdge<T> halfEdge = _data->halfEdge;
 					Vertex<T> vertex = halfEdge.getVertex();
 					do {
 						fct((void *) &vertex, data);
 						halfEdge = halfEdge.getNext();
 						vertex = halfEdge.getVertex();
-					} while (halfEdge != _data->edge);
+					} while (halfEdge != _data->halfEdge);
 				}
 			}
 
 			
 		private:
 			struct Obj{
-				HalfEdge<T> edge;
+				HalfEdge<T> halfEdge;
 				Vect<T> normal;
 				T d;
-				Obj(HalfEdge<T> he){ edge = he; };
+				Obj(HalfEdge<T> he){ halfEdge = he; };
 			};
 			boost::shared_ptr<Obj> _data;
 	};
@@ -955,6 +957,9 @@ namespace pif {
 			}
 			
 			void push(Face<T> f) {
+				_faces.push_back(f);
+			}
+			void addFace(Face<T> f) { // same as push
 				_faces.push_back(f);
 			}
 		private:
@@ -1195,14 +1200,17 @@ namespace pif {
 				this->giveFeedback();
 			};
 			bool isNull(void) const { return !(bool)_data;};
-			bool exist(void) const { return !(bool)_data->point.isNull();};
+			bool exist(void) const { return _data->exist;};
 			Vertex<T> getPoint(void) const {
 					return _data->point;
 			};
 			Face<T> getFace(void) const {
 					return _data->face;
 			};
-			void giveFeedback(void){ // lets give a feedback to the vertex of the two halfedge behind the edge (lost?) in order to compute the inside & outside information		
+			Edge<T> getEdge(void) const {
+					return _data->edge;
+			};
+			void giveFeedback(void){ // lets give a feedback to the vertex of the two halfedge behind the edge in order to compute the inside & outside information		
 				if ((bool)_data&&!(bool)_data->point.isNull()) { // intersection exist!
 					if (_data->edge.getHalfEdge().getVertex().isClosestIntersectionInSpaceDefined()){//yes
 						if (dist(_data->edge.getHalfEdge().getVertex().getClosestIntersectionInSpace().getPoint(),_data->edge.getHalfEdge().getVertex())>dist(this->getPoint(),_data->edge.getHalfEdge().getVertex())){ // this intersection is the closest so far
@@ -1237,15 +1245,18 @@ namespace pif {
 				Vertex<T> point;
 				Edge<T> edge;
 				Face<T> face;
+				bool exist;
 				Obj(Edge<T> e,Face<T> f) { 
 					edge = e; 
 					face = f;
+					#ifdef DEBUG
+						std::cout << "interesction of" << e <<  " vs " << f << std::endl;
+					#endif
 					if (face.getNormal().isNull())
 						face.computeNormal();
 					T denominator = face.getA()*(edge.getA().getX()-edge.getB().getX());
 					denominator += face.getB()*(edge.getA().getY()-edge.getB().getY());
 					denominator += face.getC()*(edge.getA().getZ()-edge.getB().getZ());
-					//si denominator positif = sort
 					if (denominator!=(T)0) { //intersection exist (If the denominator is 0 then the line is parallel to the plane and they don't intersect.)
 						T mu = face.getD() ;
 						mu +=  face.getA()*edge.getA().getX() ;
@@ -1253,70 +1264,76 @@ namespace pif {
 						mu +=  face.getC()*edge.getA().getZ() ;
 						mu /=  denominator;
 						mu /= sqrt((double)(face.getA()*face.getA() + face.getB()*face.getB() + face.getC()*face.getC()));
-						if ((mu<1)&&(mu>0)) { //For the intersection point to lie on the line segment, mu must be between 0 and denominator.
-							Vertex<T> ptmp =  edge.getA() + mu *(edge.getB() - edge.getA()); //P = P1 + mu (P2 - P1)
-							bool liesOn = false;
-							HalfEdge<T> firstHalfEdge = face.getHalfEdge();
-							HalfEdge<T> halfEdge = firstHalfEdge;
-							std::vector<Vertex<T> > vertex;
-							int nvert=0;
-							do{
-								vertex.push_back(halfEdge.getVertex());
-								nvert++;
-								halfEdge = halfEdge.getNext();
-							} while (halfEdge != firstHalfEdge);
-							
-							int i, j;
-							i=0;
-							j=nvert - 1;
-							
-							T tmp_x = abs(face.getNormal().getDx());
-							T tmp_y = abs(face.getNormal().getDy());
-							T tmp_z = abs(face.getNormal().getDz());
-											
-							if (tmp_z>tmp_x&&tmp_z>tmp_y) { // projection on Z axis
-								#ifdef DEBUG
-								std::cout << "projection on Z axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
-								#endif
-								for (i = 0, j = nvert-1; i < nvert; j = i++) {
-									if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getX()) )
-										liesOn = !liesOn;
-								}
-							} else if (tmp_x>tmp_y&&tmp_x>tmp_z) { // projection on X axis
-								#ifdef DEBUG
-								std::cout << "projection on X axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
-								#endif
-								for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
-									if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getZ() < (vertex[j].getZ()-vertex[i].getZ()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getZ()) )
-										liesOn = !liesOn;
-								}
-							} else { // projection on Y axis
-								#ifdef DEBUG
-								std::cout << "projection on Y axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
-								#endif
-								for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
-									if ( ((vertex[i].getZ()>ptmp.getZ()) != (vertex[j].getZ()>ptmp.getZ())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getZ()-vertex[i].getZ()) / (vertex[j].getZ()-vertex[i].getZ()) + vertex[i].getX()) )
-										liesOn = !liesOn;
-								}	 
+						
+						Vertex<T> ptmp =  edge.getA() + mu *(edge.getB() - edge.getA()); //P = P1 + mu (P2 - P1)
+						bool liesOn = false;
+						HalfEdge<T> firstHalfEdge = face.getHalfEdge();
+						HalfEdge<T> halfEdge = firstHalfEdge;
+						std::vector<Vertex<T> > vertex;
+						int nvert=0;
+						do{
+							vertex.push_back(halfEdge.getVertex());
+							nvert++;
+							halfEdge = halfEdge.getNext();
+						} while (halfEdge != firstHalfEdge);
+						
+						int i, j;
+						i=0;
+						j=nvert - 1;
+						
+						T tmp_x = abs(face.getNormal().getDx());
+						T tmp_y = abs(face.getNormal().getDy());
+						T tmp_z = abs(face.getNormal().getDz());
+										
+						if (tmp_z>tmp_x&&tmp_z>tmp_y) { // projection on Z axis
+							#ifdef DEBUG
+							std::cout << "projection on Z axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+							#endif
+							for (i = 0, j = nvert-1; i < nvert; j = i++) {
+								if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getX()) )
+									liesOn = !liesOn;
 							}
-							if (liesOn) {
-								point = ptmp;
-								
-							}else{
+						} else if (tmp_x>tmp_y&&tmp_x>tmp_z) { // projection on X axis
+							#ifdef DEBUG
+							std::cout << "projection on X axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+							#endif
+							for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
+								if ( ((vertex[i].getY()>ptmp.getY()) != (vertex[j].getY()>ptmp.getY())) && (ptmp.getZ() < (vertex[j].getZ()-vertex[i].getZ()) * (ptmp.getY()-vertex[i].getY()) / (vertex[j].getY()-vertex[i].getY()) + vertex[i].getZ()) )
+									liesOn = !liesOn;
+							}
+						} else { // projection on Y axis
+							#ifdef DEBUG
+							std::cout << "projection on Y axis" << " (normal:" <<  face.getNormal() << ")" << std::endl;
+							#endif
+							for (i = 0, j = nvert-1; i < nvert; j = i++) {	 
+								if ( ((vertex[i].getZ()>ptmp.getZ()) != (vertex[j].getZ()>ptmp.getZ())) && (ptmp.getX() < (vertex[j].getX()-vertex[i].getX()) * (ptmp.getZ()-vertex[i].getZ()) / (vertex[j].getZ()-vertex[i].getZ()) + vertex[i].getX()) )
+									liesOn = !liesOn;
+							}	 
+						}
+						if (liesOn){ //the intersection of the line vs the face is inside the face
+							point = ptmp;
+							#ifdef DEBUG
+								std::cout << "mu =" << mu << std::endl;
+							#endif
+							if ((mu<1)&&(mu>0)) {//For the intersection point to lie on the line segment, mu must be between 0 and denominator.
+								exist = true;
+							}else{// intersection point doesn't lie on the segment
+								exist = false;
 								#ifdef DEBUG
-								std::cout << "intersection with the plan doesn't lie on the face" << std::endl;
+								std::cout << "intersection with the plan doesn't lie on the segment" << std::endl;
 								#endif
 							}
 						}else{
 							#ifdef DEBUG
-							std::cout << "intersection with the plan doesn't lie on the segment" << std::endl;
+							std::cout << "intersection with the plan doesn't lie on the face" << std::endl;
 							#endif
-							// intersection point doesn't lie on the segment but it exist
+							exist = false;
 						}
 					}else{
 						#ifdef DEBUG
 						std::cout << "intersection doesn't exist" << std::endl;
 						#endif
+						exist = false;
 					} 
 				};
 			};
