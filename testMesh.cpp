@@ -267,9 +267,7 @@ int main(int argc, char **argv) {
 	//~ std::cout << "myMesh:\n" << myMesh << std::endl;
 	//~ myMesh.forEachEdge(printEdge<montype>, (void *)NULL);
     //~ 
-    //~ char mesh1[] = "cube.off";
-    //~ char mesh2[] = "cube2.off";
-    
+
     char mesh1[] = "meshA.off";
     char mesh2[] = "meshB.off";
     
