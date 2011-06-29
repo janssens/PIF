@@ -23,11 +23,6 @@ int main(int argc, char **argv) {
 	std::cout << "/////////\nVertex" << std::endl;
 	Vertex<montype>	nI;
 	std::cout << "not initialized nI: " << nI << std::endl;
-	//std::cout << "nI.getX(): " << nI.getX() << std::endl;
-	//nI.setZ(0);
-	//std::cout << "nI2 = nI.setZ(0): " << nI.getZ() << std::endl;
-	//Vertex<montype>	nI2 = nI.duplicate();
-	//std::cout << "nI.duplicate(): " << nI2 << std::endl;
 	nI.setXYZ(1,2,3);
 	std::cout << "nI.setXYZ(1,2,3): " << nI << std::endl;
 	Vertex<montype>	nI2 = nI.duplicate();

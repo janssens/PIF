@@ -9,15 +9,3 @@
  */
 
 #include "Type.hpp"
-
-namespace pif {
-	//~ template <> int mySqrt<int>(int i){
-		//~ return (int)sqrt((double) i);
-	//~ }
-	//~ template <> float mySqrt<float>(float i){
-		//~ return (float)sqrt( i);
-	//~ }
-	//~ template <> double mySqrt<double>(double i){
-		//~ return (double)sqrt( i);
-	//~ }
-}
