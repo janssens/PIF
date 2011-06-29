@@ -747,6 +747,10 @@ namespace pif {
 				return _data->normal.getDz();
 			};
 			////
+			bool operator ==(const Face<T> f)const {
+				return (f.getHalfEdge()==this->getHalfEdge());
+			}
+			////
 			void computeNormal(void){
 				if (!_data) {
 					std::cerr << "/!\\ PIF Error: " << "Face f is not initialized, f.computeNormal() not defined! " << std::endl;

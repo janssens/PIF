@@ -143,19 +143,41 @@ template<class T> void build(Mesh<T> * IntersectedMesh,Mesh<T> * Result){
 		do { // for each halfedge on the face
 			std::list<Intersection<T> > intersections = halfEdge.getIntersections();
 			typename std::list<Intersection<T> >::iterator it;
-			for (it=intersections.begin(); it=!intersections.end(); ++it){ //for each intersection in the halfedge
+			for (it=intersections.begin(); it!=intersections.end(); ++it){ //for each intersection in the halfedge
 				std::cout << *it << std::endl;// each intersection
 				//face1 is f, the current face
 				Face<T> face2 = it->getFace();// the face2
-				//for each halfedge of face2
-					//for each intersection in halfedge
-						//if intersection.face == face2 eureka
-				//if not eureka
-					//for each halfedge in face1
-						//for each intersection in halfedge
-							//if intersection.face == face2 eureka
+				bool eureka = false;
+				HalfEdge<T> face2CurrentHalfEdge = face2.getHalfEdge();
+				HalfEdge<T> halfEdgeToStop = face2CurrentHalfEdge;
+				do {//for each halfedge of face2
+					std::list<Intersection<T> > intersectionsOfFace2CurrentHalfEdge = face2CurrentHalfEdge.getIntersections();
+					typename std::list<Intersection<T> >::iterator itf2;
+					for (itf2=intersectionsOfFace2CurrentHalfEdge.begin(); itf2!=intersectionsOfFace2CurrentHalfEdge.end()&&!eureka; ++itf2){//for each intersection in halfedge
+						if ((Face<T>)itf2->getFace() == *f){
+							eureka=true;//if intersection.face == face1 eureka
+							std::cout << "eureka: " << "from " << it->getPoint() << " to " << itf2->getPoint() << std::endl; 
+						}
+					}
+					face2CurrentHalfEdge = face2CurrentHalfEdge.getNext();
+				} while (halfEdgeToStop != face2CurrentHalfEdge);
+				if (!eureka) {//if not eureka
+					HalfEdge<T> face1CurrentHalfEdge = f->getHalfEdge();
+					halfEdgeToStop = face1CurrentHalfEdge;
+					do {//for each halfedge in face1
+						std::list<Intersection<T> > intersectionsOfFace1CurrentHalfEdge = face1CurrentHalfEdge.getIntersections();
+						typename std::list<Intersection<T> >::iterator itf1;
+						for (itf1=intersectionsOfFace1CurrentHalfEdge.begin(); itf1!=intersectionsOfFace1CurrentHalfEdge.end()&&!eureka; ++itf1){//for each intersection in halfedge
+							if (itf1->getFace() == face2){
+								eureka=true;//if intersection.face == face2 eureka
+								std::cout << "eureka: " << "from " << it->getPoint() << " to " << itf1->getPoint() << std::endl; 
+							}
+						}
+						face2CurrentHalfEdge = face2CurrentHalfEdge.getNext();
+					} while (halfEdgeToStop != face2CurrentHalfEdge);
 					//if not eureka
 						//FAIL
+				}
 			}
 			halfEdge = halfEdge.getNext();
 		} while (halfEdge != currentFaceHalfEdge);
@@ -453,12 +475,12 @@ int main(int argc, char **argv) {
 		std::cout << "==== forEachVertex ====" << std::endl;
 		myMeshFromFileA.forEachVertex(printVertex<montype>);
 		myMeshFromFileB.forEachVertex(printVertex<montype>);
-		//~ Mesh<montype> myMeshFromInter;
-		//~ std::cout << "==== A inside B ====" << std::endl;
-		//~ Mesh<montype> result;
-		//inside(&myMeshFromFileA,&result);
-		//build(&myMeshFromFileA,&result);
-		//std::cout <<  result << std::endl;
+
+		Mesh<montype> result;
+
+		build(&myMeshFromFileA,&result);
+		build(&myMeshFromFileB,&result);
+		
     }
     else
          std::cerr << "Impossible d'ouvrir les fichiers !" << std::endl;
